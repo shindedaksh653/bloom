@@ -27,7 +27,6 @@ export default function Chat({ currentUser }: ChatProps) {
   const isDaksh = currentUser === 'daksh';
   const chatPartnerName = isDaksh ? 'Mansi' : 'Daksh';
 
-  // Real-time listener for live messages from Firestore database
   useEffect(() => {
     const q = query(collection(db, 'chats'), orderBy('time', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -41,12 +40,10 @@ export default function Chat({ currentUser }: ChatProps) {
     return () => unsubscribe();
   }, []);
 
-  // Auto-scroll down when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Send text message to Firebase with correct sender POV
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!inputText.trim()) return;
@@ -65,7 +62,6 @@ export default function Chat({ currentUser }: ChatProps) {
     }
   };
 
-  // Handle uploading photos/videos and converting to Base64 for cloud sync
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -77,11 +73,9 @@ export default function Chat({ currentUser }: ChatProps) {
     }
 
     const isVideo = file.type.startsWith('video');
-
     const reader = new FileReader();
     reader.onload = async () => {
       const base64String = reader.result as string;
-
       try {
         await addDoc(collection(db, 'chats'), {
           sender: isDaksh ? 'daksh' : 'her',
@@ -94,39 +88,35 @@ export default function Chat({ currentUser }: ChatProps) {
         console.error("Error uploading media:", error);
       }
     };
-
     reader.readAsDataURL(file);
-
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Check if a message belongs to the currently logged-in user
   const isMyMessage = (sender: string) => {
     if (isDaksh) return sender === 'daksh';
     return sender === 'her';
   };
 
   return (
-    // Absolute pinning guarantees the full page never slides or bounces up and down
     <div className="absolute inset-x-0 top-0 bottom-16 sm:bottom-20 p-3 sm:p-4 flex flex-col max-w-2xl mx-auto overflow-hidden">
       
-      {/* CHAT HEADER - Strictly Pinned Top */}
+      {/* CHAT HEADER - Stays strictly locked to the top */}
       <div 
-        className="border rounded-2xl p-3 sm:p-4 shadow-sm flex items-center gap-3 shrink-0 z-10 mb-3"
+        className="border rounded-2xl p-4 shadow-sm flex items-center gap-3 transition-colors shrink-0 z-10 mb-3"
         style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
       >
-        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-purple-100 dark:bg-lavender/15 text-purple-600 dark:text-lavender flex items-center justify-center shadow-inner">
+        <div className="w-11 h-11 rounded-2xl bg-purple-100 dark:bg-lavender/15 text-purple-600 dark:text-lavender flex items-center justify-center shadow-inner">
           <Heart size={20} fill="currentColor" />
         </div>
         <div className="flex flex-col">
-          <h2 className="text-sm sm:text-base font-bold" style={{ color: 'var(--text-main)' }}>{chatPartnerName}</h2>
+          <h2 className="text-base font-bold" style={{ color: 'var(--text-main)' }}>{chatPartnerName}</h2>
           <p className="text-[11px] text-green-500 font-medium flex items-center gap-1 mt-0.5">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Online
           </p>
         </div>
       </div>
 
-      {/* MESSAGES LIST - Only this section scrolls internally */}
+      {/* MESSAGES LIST - Only this inner container is allowed to scroll */}
       <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-3 py-2 pr-1">
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-400">
@@ -205,7 +195,7 @@ export default function Chat({ currentUser }: ChatProps) {
         className="hidden" 
       />
 
-      {/* INPUT BAR - Strictly Pinned Bottom */}
+      {/* INPUT BAR - Stays locked right above the bottom menu navigation */}
       <form 
         onSubmit={handleSendMessage} 
         className="border rounded-2xl p-2 shadow-md flex items-center gap-2 transition-colors shrink-0 z-10 mt-2"
