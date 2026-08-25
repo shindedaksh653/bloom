@@ -110,11 +110,11 @@ export default function Chat({ currentUser }: ChatProps) {
   };
 
   return (
-    <div className="p-3 sm:p-4 flex flex-col h-[calc(100dvh-5rem)] max-w-2xl mx-auto relative overflow-hidden">
+    <div className="p-3 sm:p-4 flex flex-col h-[100dvh] max-w-2xl mx-auto relative overflow-hidden">
       
       {/* CHAT HEADER - Fixed Top */}
       <div 
-        className="border rounded-2xl p-4 mb-4 shadow-sm flex items-center gap-3 transition-colors shrink-0"
+        className="border rounded-2xl p-4 shadow-sm flex items-center gap-3 transition-colors shrink-0 z-10"
         style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
       >
         <div className="w-11 h-11 rounded-2xl bg-purple-100 dark:bg-lavender/15 text-purple-600 dark:text-lavender flex items-center justify-center shadow-inner">
@@ -129,7 +129,7 @@ export default function Chat({ currentUser }: ChatProps) {
       </div>
 
       {/* MESSAGES LIST - Scrollable Middle Window */}
-      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-3 pr-2 mb-4">
+      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-3 py-4 pr-1">
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-400">
             <p className="text-sm">No messages yet. Say hello to {chatPartnerName}!</p>
@@ -210,7 +210,7 @@ export default function Chat({ currentUser }: ChatProps) {
       {/* INPUT BAR - Fixed Bottom */}
       <form 
         onSubmit={handleSendMessage} 
-        className="border rounded-2xl p-2 shadow-md flex items-center gap-2 transition-colors shrink-0"
+        className="border rounded-2xl p-2 shadow-md flex items-center gap-2 transition-colors shrink-0 z-10 mb-16 sm:mb-4"
         style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
       >
         <button 
