@@ -1,24 +1,29 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Music as MusicIcon } from 'lucide-react';
-
-interface Song {
-  title: string;
-  artist: string;
-  duration: string;
-  file: string;
-}
+import type { Song } from '../App';
 
 interface MusicProps {
   currentUser: string;
+  currentSong: Song | null;
+  setCurrentSong: (song: Song) => void;
+  isPlaying: boolean;
+  setIsPlaying: (playing: boolean) => void;
+  currentTime: number;
+  duration: number;
+  handleSeek: (newTime: number) => void;
 }
 
-export default function Music({ currentUser: _currentUser }: MusicProps) {
+export default function Music({
+  currentUser: _currentUser,
+  currentSong,
+  setCurrentSong,
+  isPlaying,
+  setIsPlaying,
+  currentTime,
+  duration,
+  handleSeek
+}: MusicProps) {
   const [selectedArtist, setSelectedArtist] = useState('Taylor Swift');
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  
-  const audioRef = useRef<HTMLAudioElement>(null);
 
   const taylorSongs: Song[] = [
     { title: 'All Too Well', artist: 'Taylor Swift', duration: '5:29', file: '/music/All to well.mp3' },
@@ -158,8 +163,6 @@ export default function Music({ currentUser: _currentUser }: MusicProps) {
     { title: 'Vampire', artist: 'Olivia Rodrigo', duration: '3:39', file: '/olivia/vampire .mp3' }
   ];
 
-  const [currentSong, setCurrentSong] = useState<Song>(taylorSongs[0]);
-
   const artistsData: { [key: string]: Song[] } = {
     'Taylor Swift': taylorSongs,
     'Lana Del Rey': lanaSongs,
@@ -169,43 +172,7 @@ export default function Music({ currentUser: _currentUser }: MusicProps) {
     'Olivia Rodrigo': oliviaSongs
   };
 
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        setIsPlaying(false);
-        audioRef.current?.pause();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      if (!currentSong.file) return;
-      audioRef.current.play().catch((err) => console.log("Audio error:", err));
-    } else {
-      audioRef.current.pause();
-    }
-  }, [isPlaying, currentSong]);
-
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-      setDuration(audioRef.current.duration || 0);
-    }
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTime = parseFloat(e.target.value);
-    setCurrentTime(newTime);
-    if (audioRef.current) {
-      audioRef.current.currentTime = newTime;
-    }
-  };
+  const activeSong = currentSong || taylorSongs[0];
 
   const formatTime = (secs: number) => {
     if (isNaN(secs)) return "0:00";
@@ -221,7 +188,7 @@ export default function Music({ currentUser: _currentUser }: MusicProps) {
 
   const handleNext = () => {
     const list = artistsData[selectedArtist] || taylorSongs;
-    const currentIndex = list.findIndex((s: Song) => s.title === currentSong.title);
+    const currentIndex = list.findIndex((s: Song) => s.title === activeSong.title);
     const nextIndex = (currentIndex + 1) % list.length;
     setCurrentSong(list[nextIndex]);
     setIsPlaying(true);
@@ -229,7 +196,7 @@ export default function Music({ currentUser: _currentUser }: MusicProps) {
 
   const handlePrev = () => {
     const list = artistsData[selectedArtist] || taylorSongs;
-    const currentIndex = list.findIndex((s: Song) => s.title === currentSong.title);
+    const currentIndex = list.findIndex((s: Song) => s.title === activeSong.title);
     const prevIndex = (currentIndex - 1 + list.length) % list.length;
     setCurrentSong(list[prevIndex]);
     setIsPlaying(true);
@@ -241,14 +208,6 @@ export default function Music({ currentUser: _currentUser }: MusicProps) {
         <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: 'var(--text-main)' }}>Music</h1>
         <p className="text-xs opacity-70 mt-0.5">A collection of your favorite artists and songs.</p>
       </div>
-
-      <audio 
-        ref={audioRef} 
-        src={currentSong.file} 
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleTimeUpdate}
-        onEnded={handleNext}
-      />
 
       <div className="flex flex-col gap-3">
         <h3 className="text-xs font-semibold tracking-wider text-gray-400 uppercase">Choose an Artist</h3>
@@ -280,9 +239,9 @@ export default function Music({ currentUser: _currentUser }: MusicProps) {
         </div>
 
         <div className="text-center w-full">
-          <h2 className="text-lg font-bold truncate px-2" style={{ color: 'var(--text-main)' }}>{currentSong.title}</h2>
-          <p className="text-xs opacity-70 mt-0.5">{currentSong.artist}</p>
-          {!currentSong.file && (
+          <h2 className="text-lg font-bold truncate px-2" style={{ color: 'var(--text-main)' }}>{activeSong.title}</h2>
+          <p className="text-xs opacity-70 mt-0.5">{activeSong.artist}</p>
+          {!activeSong.file && (
             <p className="text-[10px] text-amber-400 mt-1">Audio file not added yet for this artist</p>
           )}
         </div>
@@ -293,7 +252,7 @@ export default function Music({ currentUser: _currentUser }: MusicProps) {
             min={0}
             max={duration || 100}
             value={currentTime}
-            onChange={handleSeek}
+            onChange={(e) => handleSeek(parseFloat(e.target.value))}
             className="w-full h-1.5 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-purple-500 dark:accent-lavender"
           />
           <div className="flex justify-between text-[10px] opacity-60" style={{ color: 'var(--text-main)' }}>
@@ -328,7 +287,7 @@ export default function Music({ currentUser: _currentUser }: MusicProps) {
               className="border rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition-all hover:opacity-90 shadow-sm"
               style={{
                 backgroundColor: 'var(--card-bg)',
-                borderColor: currentSong.title === song.title ? '#C0A0FD' : 'var(--card-border)',
+                borderColor: activeSong.title === song.title ? '#C0A0FD' : 'var(--card-border)',
                 color: 'var(--text-main)'
               }}
             >

@@ -20,7 +20,9 @@ export default function Chat({ currentUser }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isDaksh = currentUser === 'daksh';
 
@@ -40,6 +42,11 @@ export default function Chat({ currentUser }: ChatProps) {
 
     return () => unsubscribe();
   }, []);
+
+  // Auto-scroll down when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // Send text message to Firebase with correct sender POV
   const handleSendMessage = async (e?: React.FormEvent) => {
@@ -64,6 +71,13 @@ export default function Chat({ currentUser }: ChatProps) {
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Check payload size to fit within Firestore's 1MB limit for Base64 strings
+    if (file.size > 1024 * 1024 * 0.8) {
+      alert('File size is too large for database sync (Max ~800KB). Please choose a smaller image or short video clip.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
 
     const isVideo = file.type.startsWith('video');
 
@@ -96,9 +110,9 @@ export default function Chat({ currentUser }: ChatProps) {
   };
 
   return (
-    <div className="p-4 pt-12 pb-20 flex flex-col h-[100dvh] max-w-2xl mx-auto relative overflow-hidden">
+    <div className="p-3 sm:p-4 flex flex-col h-[calc(100dvh-5rem)] max-w-2xl mx-auto relative overflow-hidden">
       
-      {/* CHAT HEADER */}
+      {/* CHAT HEADER - Fixed Top */}
       <div 
         className="border rounded-2xl p-4 mb-4 shadow-sm flex items-center gap-3 transition-colors shrink-0"
         style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
@@ -114,8 +128,8 @@ export default function Chat({ currentUser }: ChatProps) {
         </div>
       </div>
 
-      {/* MESSAGES LIST */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-3 pr-2 mb-4">
+      {/* MESSAGES LIST - Scrollable Middle Window */}
+      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-3 pr-2 mb-4">
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-400">
             <p className="text-sm">No messages yet. Say hello to {chatPartnerName}!</p>
@@ -137,26 +151,32 @@ export default function Chat({ currentUser }: ChatProps) {
                   style={!mine ? { backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-main)' } : {}}
                 >
                   {msg.mediaUrl && (
-                    <div className="mb-2 overflow-hidden rounded-xl cursor-pointer">
+                    <div className="mb-2 overflow-hidden rounded-xl">
                       {msg.mediaType === 'video' ? (
-                        <video controls src={msg.mediaUrl} className="max-h-48 rounded-xl w-full object-cover" />
+                        <video 
+                          controls 
+                          playsInline 
+                          src={msg.mediaUrl} 
+                          className="max-h-48 rounded-xl w-full object-cover bg-black/20" 
+                        />
                       ) : (
                         <img 
                           src={msg.mediaUrl} 
                           alt="Shared media" 
-                          className="max-h-48 rounded-xl w-full object-cover hover:opacity-95 transition-opacity"
+                          className="max-h-48 rounded-xl w-full object-cover hover:opacity-95 transition-opacity cursor-pointer"
                           onClick={() => setFullscreenImage(msg.mediaUrl || null)}
                         />
                       )}
                     </div>
                   )}
-                  {msg.text && <p className="leading-relaxed">{msg.text}</p>}
+                  {msg.text && <p className="leading-relaxed break-words">{msg.text}</p>}
                 </div>
                 <span className="text-[10px] text-gray-400 mt-1 px-1">Just now</span>
               </div>
             );
           })
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* FULLSCREEN IMAGE LIGHTBOX MODAL */}
@@ -187,7 +207,7 @@ export default function Chat({ currentUser }: ChatProps) {
         className="hidden" 
       />
 
-      {/* INPUT BAR */}
+      {/* INPUT BAR - Fixed Bottom */}
       <form 
         onSubmit={handleSendMessage} 
         className="border rounded-2xl p-2 shadow-md flex items-center gap-2 transition-colors shrink-0"
