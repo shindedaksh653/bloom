@@ -25,8 +25,6 @@ export default function Chat({ currentUser }: ChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isDaksh = currentUser === 'daksh';
-
-  // Names based on POV
   const chatPartnerName = isDaksh ? 'Mansi' : 'Daksh';
 
   // Real-time listener for live messages from Firestore database
@@ -72,7 +70,6 @@ export default function Chat({ currentUser }: ChatProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check payload size to fit within Firestore's 1MB limit for Base64 strings
     if (file.size > 1024 * 1024 * 0.8) {
       alert('File size is too large for database sync (Max ~800KB). Please choose a smaller image or short video clip.');
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -110,26 +107,27 @@ export default function Chat({ currentUser }: ChatProps) {
   };
 
   return (
-    <div className="p-3 sm:p-4 flex flex-col h-[100dvh] max-w-2xl mx-auto relative overflow-hidden">
+    // Absolute pinning guarantees the full page never slides or bounces up and down
+    <div className="absolute inset-x-0 top-0 bottom-16 sm:bottom-20 p-3 sm:p-4 flex flex-col max-w-2xl mx-auto overflow-hidden">
       
-      {/* CHAT HEADER - Fixed Top */}
+      {/* CHAT HEADER - Strictly Pinned Top */}
       <div 
-        className="border rounded-2xl p-4 shadow-sm flex items-center gap-3 transition-colors shrink-0 z-10"
+        className="border rounded-2xl p-3 sm:p-4 shadow-sm flex items-center gap-3 shrink-0 z-10 mb-3"
         style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
       >
-        <div className="w-11 h-11 rounded-2xl bg-purple-100 dark:bg-lavender/15 text-purple-600 dark:text-lavender flex items-center justify-center shadow-inner">
+        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-purple-100 dark:bg-lavender/15 text-purple-600 dark:text-lavender flex items-center justify-center shadow-inner">
           <Heart size={20} fill="currentColor" />
         </div>
         <div className="flex flex-col">
-          <h2 className="text-base font-bold" style={{ color: 'var(--text-main)' }}>{chatPartnerName}</h2>
+          <h2 className="text-sm sm:text-base font-bold" style={{ color: 'var(--text-main)' }}>{chatPartnerName}</h2>
           <p className="text-[11px] text-green-500 font-medium flex items-center gap-1 mt-0.5">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Online
           </p>
         </div>
       </div>
 
-      {/* MESSAGES LIST - Scrollable Middle Window */}
-      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-3 py-4 pr-1">
+      {/* MESSAGES LIST - Only this section scrolls internally */}
+      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-3 py-2 pr-1">
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-400">
             <p className="text-sm">No messages yet. Say hello to {chatPartnerName}!</p>
@@ -207,10 +205,10 @@ export default function Chat({ currentUser }: ChatProps) {
         className="hidden" 
       />
 
-      {/* INPUT BAR - Fixed Bottom */}
+      {/* INPUT BAR - Strictly Pinned Bottom */}
       <form 
         onSubmit={handleSendMessage} 
-        className="border rounded-2xl p-2 shadow-md flex items-center gap-2 transition-colors shrink-0 z-10 mb-16 sm:mb-4"
+        className="border rounded-2xl p-2 shadow-md flex items-center gap-2 transition-colors shrink-0 z-10 mt-2"
         style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
       >
         <button 
